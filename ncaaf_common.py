@@ -4,14 +4,24 @@ from __future__ import annotations
 
 import json
 import os
+import re
 
 import google.auth
 import gspread
 from google.oauth2.service_account import Credentials
 
 
+def normalize_spreadsheet_id_(value: str) -> str:
+    """Accept either a bare spreadsheet ID or a full Google Sheets URL."""
+    value = value.strip().strip("'\"")
+    match = re.search(r"/spreadsheets/d/([A-Za-z0-9_-]+)", value)
+    if match:
+        return match.group(1)
+    return value.split("?", 1)[0].split("#", 1)[0].removesuffix("/edit").strip("/")
+
+
 def open_google_book_():
-    spreadsheet_id = os.getenv("GOOGLE_SHEETS_ID", "").strip()
+    spreadsheet_id = normalize_spreadsheet_id_(os.getenv("GOOGLE_SHEETS_ID", ""))
     if not spreadsheet_id:
         raise RuntimeError("GOOGLE_SHEETS_ID is required.")
     scopes = ["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive"]
