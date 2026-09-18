@@ -40,6 +40,11 @@ def main():
         prior_stats = stats[pd.to_numeric(stats.week, errors="coerce") == week - 1].copy()
         results = grade_archive(previous, prior_games, prior_stats)
         upsert_records_sheet("NCAAF Best Card Results", results, ("season", "week", "card", "component"))
+    else:
+        rows_to_sheet(
+            "NCAAF Best Card Results",
+            [["Status"], ["No completed prior-week card is available yet. Results begin after the first card is played."]],
+        )
 
     generated = now().astimezone().strftime("%Y-%m-%d %H:%M %Z")
     rows = [["Weekly NCAAF Top 25 Best Card", ""], ["Season", season], ["Week", week], ["Generated", generated],
