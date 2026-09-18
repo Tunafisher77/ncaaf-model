@@ -12,12 +12,16 @@ from zoneinfo import ZoneInfo
 import pandas as pd
 
 PACIFIC = ZoneInfo("America/Los_Angeles")
-SCOREBOARD = "https://site.api.espn.com/apis/site/v2/sports/football/college-football/scoreboard"
+SCOREBOARD = "https://cdn.espn.com/core/college-football/scoreboard"
 DATA_ROOT = "https://raw.githubusercontent.com/sportsdataverse/cfbfastR-data/main"
 
 
 def _json(url: str) -> dict:
-    request = Request(url, headers={"User-Agent": "ncaaf-best-card/1.0"})
+    request = Request(url, headers={
+        "User-Agent": "Mozilla/5.0 (compatible; ncaaf-best-card/1.0)",
+        "Accept": "application/json,text/plain,*/*",
+        "Referer": "https://www.espn.com/college-football/scoreboard/",
+    })
     with urlopen(request, timeout=45) as response:
         import json
         return json.load(response)
@@ -32,12 +36,16 @@ def now() -> datetime:
 
 
 def load_scoreboard(season: int | None = None, week: int | None = None) -> dict:
-    params = ["groups=80", "limit=200"]
+    params = ["xhr=1", "groups=80", "limit=200"]
     if season:
-        params += [f"dates={season}", "seasontype=2"]
+        params += [f"year={season}", "seasontype=2"]
     if week:
         params.append(f"week={week}")
-    return _json(SCOREBOARD + "?" + "&".join(params))
+    payload = _json(SCOREBOARD + "?" + "&".join(params))
+    try:
+        return payload["content"]["sbData"]
+    except (KeyError, TypeError):
+        raise RuntimeError("ESPN CDN scoreboard response did not contain scoreboard data.")
 
 
 def load_player_data(season: int) -> tuple[pd.DataFrame, pd.DataFrame]:
