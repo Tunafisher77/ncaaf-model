@@ -1,8 +1,6 @@
 name: Weekly NCAAF Top 25 Best Card
 
 on:
-  push:
-    branches: [main]
   schedule:
     - cron: "50 11 * * 5"
     - cron: "50 13 * * 5"
