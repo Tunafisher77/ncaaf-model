@@ -61,7 +61,7 @@ def _rank(competitor: dict) -> int:
     return int(value) if str(value).isdigit() else 99
 
 
-def parse_games(payload: dict) -> list[dict]:
+def parse_games(payload: dict, require_odds: bool = True) -> list[dict]:
     games = []
     for event in payload.get("events", []):
         competition = event.get("competitions", [{}])[0]
@@ -71,13 +71,14 @@ def parse_games(payload: dict) -> list[dict]:
         home, away = competitors["home"], competitors["away"]
         if min(_rank(home), _rank(away)) > 25:
             continue
-        odds = (competition.get("odds") or [])
-        if not odds or not odds[0].get("details"):
+        odds = competition.get("odds") or []
+        odds_info = odds[0] if odds else {}
+        if require_odds and not odds_info.get("details"):
             continue
-        point = odds[0].get("pointSpread", {})
+        point = odds_info.get("pointSpread", {})
         home_line = point.get("home", {}).get("close", {}).get("line")
         away_line = point.get("away", {}).get("close", {}).get("line")
-        if home_line is None or away_line is None:
+        if require_odds and (home_line is None or away_line is None):
             continue
         games.append({
             "event_id": str(event["id"]), "kickoff": event.get("date", ""),
@@ -87,8 +88,10 @@ def parse_games(payload: dict) -> list[dict]:
             "away_key": away["team"].get("location", away["team"]["displayName"]),
             "home_abbr": home["team"].get("abbreviation", ""), "away_abbr": away["team"].get("abbreviation", ""),
             "home_rank": _rank(home), "away_rank": _rank(away),
-            "home_line": float(home_line), "away_line": float(away_line),
-            "odds_detail": odds[0]["details"], "odds_provider": odds[0].get("provider", {}).get("name", "ESPN odds feed"),
+            "home_line": float(home_line) if home_line is not None else 0.0,
+            "away_line": float(away_line) if away_line is not None else 0.0,
+            "odds_detail": odds_info.get("details", ""),
+            "odds_provider": odds_info.get("provider", {}).get("name", "ESPN odds feed"),
             "completed": competition.get("status", {}).get("type", {}).get("completed", False),
             "home_score": float(home.get("score", 0) or 0), "away_score": float(away.get("score", 0) or 0),
         })
