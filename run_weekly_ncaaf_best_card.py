@@ -36,7 +36,7 @@ def main():
     previous = [r for r in read_records_sheet("NCAAF Best Card Archive") if int(r.get("season", 0) or 0) == season and int(r.get("week", 0) or 0) == week - 1]
     results = []
     if previous:
-        prior_games = parse_games(load_scoreboard(season, week - 1))
+        prior_games = parse_games(load_scoreboard(season, week - 1), require_odds=False)
         prior_stats = stats[pd.to_numeric(stats.week, errors="coerce") == week - 1].copy()
         results = grade_archive(previous, prior_games, prior_stats)
         upsert_records_sheet("NCAAF Best Card Results", results, ("season", "week", "card", "component"))
