@@ -31,7 +31,7 @@ def main():
     if not season or not week or not card:
         raise RuntimeError("The latest archived NCAAF card has an invalid season or week.")
 
-    games = parse_games(load_scoreboard(season, week))
+    games = parse_games(load_scoreboard(season, week), require_odds=False)
     stats, _ = load_player_data(season)
     week_stats = stats[pd.to_numeric(stats.week, errors="coerce") == week].copy()
     results = grade_archive(card, games, week_stats)
