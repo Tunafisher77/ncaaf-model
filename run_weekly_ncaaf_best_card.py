@@ -1,6 +1,7 @@
 """Publish Friday NCAAF Top 25 Best Card and prior-week results."""
 
 from datetime import datetime, timezone
+from zoneinfo import ZoneInfo
 
 import pandas as pd
 
@@ -46,8 +47,10 @@ def main():
             [["Status"], ["No completed prior-week card is available yet. Results begin after the first card is played."]],
         )
 
-    generated = now().astimezone().strftime("%Y-%m-%d %H:%M %Z")
-    rows = [["Weekly NCAAF Top 25 Best Card", ""], ["Season", season], ["Week", week], ["Generated", generated],
+    pacific_now = now().astimezone(ZoneInfo("America/Los_Angeles"))
+    generated = pacific_now.strftime("%Y-%m-%d %H:%M %Z")
+    rows = [["Weekly NCAAF Top 25 Best Card", ""], ["Season", season], ["Week", week],
+            ["Generated Date", pacific_now.strftime("%Y-%m-%d")], ["Generated", generated],
             ["Card Policy", "5 games involving AP Top 25 teams; ranked-vs-ranked matchups always receive first priority"],
             ["Selections", "Spread + one RB TD scorer + one WR/TE TD scorer per game"], ["", ""],
             ["LAST WEEK'S RESULTS", ""]]
