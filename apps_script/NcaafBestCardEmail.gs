@@ -37,7 +37,10 @@ function sendNcaafBestCard_(forceSend) {
 
     var key = season + '-W' + week;
     var props = PropertiesService.getScriptProperties();
-    if (!forceSend && props.getProperty(NCAAF_BEST_CARD_SENT_WEEK) === key) return;
+    var fingerprint = ncaafFingerprint_(values);
+    var fingerprintKey = NCAAF_BEST_CARD_SENT_WEEK + '_CONTENT_' + key;
+    var previousFingerprint = props.getProperty(fingerprintKey);
+    if (!forceSend && previousFingerprint === fingerprint) return;
 
     var recipient = Session.getEffectiveUser().getEmail() || Session.getActiveUser().getEmail();
     if (!recipient) throw new Error('Google did not provide an email recipient for this account.');
@@ -65,17 +68,24 @@ function sendNcaafBestCard_(forceSend) {
 
     MailApp.sendEmail({
       to: recipient,
-      subject: 'Weekly NCAAF Top 25 Best Card — ' + season + ' Week ' + week,
+      subject: ((!forceSend && previousFingerprint) ? '[UPDATED] ' : '') + 'Weekly NCAAF Top 25 Best Card — ' + season + ' Week ' + week,
       htmlBody: html,
       body: values.map(function(r) { return r.filter(String).join(': '); }).join('\n'),
       name: 'Weekly NCAAF Best Card'
     });
 
     props.setProperty(NCAAF_BEST_CARD_SENT_WEEK, key);
+    props.setProperty(fingerprintKey, fingerprint);
     console.log('NCAAF Best Card email sent to ' + recipient + ' for ' + key);
   } finally {
     lock.releaseLock();
   }
+}
+
+function ncaafFingerprint_(values) {
+  var digest = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256,
+    JSON.stringify(values), Utilities.Charset.UTF_8);
+  return Utilities.base64EncodeWebSafe(digest);
 }
 
 function findNcaafValue_(values, label) {
